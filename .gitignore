@@ -1,0 +1,11 @@
+# Real config holds your Google client secret and refresh token. Never commit it.
+lib/config.php
+
+# Runtime data: upload manifest, cached thumbnails, rate-limit counters.
+data/*.json
+data/cache/*
+!data/cache/.gitkeep
+
+# Editor / OS noise
+.DS_Store
+*.swp
