@@ -70,5 +70,5 @@ render_head(
     <p class="linkrow"><a href="gallery.php">See the Gallery</a></p>
 
   </main>
-  <script src="assets/upload.js"></script>
+  <script src="<?= e(asset('assets/upload.js')) ?>"></script>
 <?php render_foot(); ?>

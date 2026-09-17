@@ -10,6 +10,27 @@
 
 declare(strict_types=1);
 
+/**
+ * Append a cache-busting stamp to an asset URL.
+ *
+ * Browsers hold on to a stylesheet hard, and a stale one against fresh markup
+ * looks like a broken redesign rather than a caching problem — which is
+ * exactly what it looked like the first time. Keying the URL to the file's
+ * modification time means a changed file is always a new URL, so there is
+ * nothing to tell anyone to hard-refresh.
+ *
+ * Both deployment shapes are checked: lib/ beside public/, and lib/ inside it.
+ */
+function asset(string $path): string
+{
+    foreach ([__DIR__ . '/../public/' . $path, __DIR__ . '/' . $path] as $file) {
+        if (is_file($file)) {
+            return $path . '?v=' . filemtime($file);
+        }
+    }
+    return $path;
+}
+
 /** Opening <head> plus the start of the page shell. */
 function render_head(string $title, string $description = ''): void
 {
@@ -25,7 +46,7 @@ function render_head(string $title, string $description = ''): void
 <?php endif; ?>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0a0935">
-<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="<?= e(asset('assets/styles.css')) ?>">
 </head>
 <body>
 <div class="frame">
