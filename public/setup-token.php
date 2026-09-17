@@ -338,8 +338,7 @@ render_head('Setup — Ali & Robert');
 </style>
   <main class="wrap">
 
-    <?php render_names(); ?>
-    <?php render_barn(true); ?>
+    <?php render_masthead('', false); ?>
     <?php render_divider(); ?>
 
 <?php if ($error): ?>

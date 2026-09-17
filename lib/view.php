@@ -28,9 +28,8 @@ function render_head(string $title, string $description = ''): void
 <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-<div class="page">
+<div class="frame">
   <img class="lights" src="assets/brand/string-lights.png" alt="" aria-hidden="true">
-  <div class="confetti tl" aria-hidden="true"></div>
   <div class="confetti br" aria-hidden="true"></div>
     <?php
 }
@@ -45,15 +44,29 @@ function render_foot(): void
 }
 
 /**
- * The couple's names, stacked with the ampersand on its own line.
- * Invitation order — ALI then ROBERT — as the invitation and welcome sign use.
+ * Masthead: the Round Barn beside the names rather than stacked above them.
+ *
+ * The invitation stacks the names with the ampersand on its own line and sets
+ * the barn large and centred beneath. That is right for a 5x7 card, but here
+ * it pushed the upload form below the fold on a phone, and the whole point of
+ * this page is the button. Same elements, laid out across instead of down.
  */
-function render_names(string $lead = ''): void
+function render_masthead(string $lead = '', bool $withDate = true): void
 {
-    if ($lead !== '') {
-        echo '<p class="lead">' . e($lead) . '</p>';
-    }
-    echo '<h1 class="names">ALI<span class="amp">&amp;</span>ROBERT</h1>';
+    ?>
+    <header class="masthead">
+      <img class="masthead__barn" src="assets/brand/round-barn.png" alt="" aria-hidden="true">
+      <div class="masthead__text">
+        <?php if ($lead !== ''): ?>
+          <p class="lead"><?= e($lead) ?></p>
+        <?php endif; ?>
+        <h1 class="names">ALI <span class="amp">&amp;</span> ROBERT</h1>
+        <?php if ($withDate): ?>
+          <p class="dateline">09<span class="bar">|</span>19<span class="bar">|</span>2026</p>
+        <?php endif; ?>
+      </div>
+    </header>
+    <?php
 }
 
 /** Numeric date with vertical bars, from the invitation front. */

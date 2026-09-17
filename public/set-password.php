@@ -20,8 +20,7 @@ if (!is_file($guard)) {
     render_head('Reset Password');
     ?>
       <main class="wrap">
-        <?php render_names(); ?>
-        <?php render_barn(true); ?>
+        <?php render_masthead('', false); ?>
         <?php render_divider(); ?>
         <h2 class="title">One Step First</h2>
         <div class="card" style="margin-top:var(--space-3)">
@@ -70,8 +69,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 render_head('Reset Password');
 ?>
   <main class="wrap">
-    <?php render_names(); ?>
-    <?php render_barn(true); ?>
+    <?php render_masthead('', false); ?>
     <?php render_divider(); ?>
 
 <?php if ($done): ?>

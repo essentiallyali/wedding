@@ -58,8 +58,7 @@ render_head('Approvals — Ali & Robert');
 
 <?php if (!$authed): ?>
 
-    <?php render_names(); ?>
-    <?php render_barn(true); ?>
+    <?php render_masthead('', false); ?>
     <?php render_divider(); ?>
 
     <h2 class="title">Approvals</h2>
@@ -78,8 +77,7 @@ render_head('Approvals — Ali & Robert');
 
 <?php else: ?>
 
-    <?php render_names(); ?>
-    <?php render_barn(true); ?>
+    <?php render_masthead('', false); ?>
     <?php render_divider(); ?>
 
     <h2 class="title">Approvals</h2>

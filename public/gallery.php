@@ -13,9 +13,7 @@ render_head('The Gallery — Ali & Robert');
 ?>
   <main class="wrap wrap--wide">
 
-    <?php render_names('Photographs from the Wedding of'); ?>
-    <?php render_dateline(); ?>
-    <?php render_barn(true); ?>
+    <?php render_masthead('Photographs from the Wedding of'); ?>
     <?php render_divider(); ?>
 
     <h2 class="title">The Gallery</h2>

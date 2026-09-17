@@ -11,9 +11,7 @@ render_head(
 ?>
   <main class="wrap">
 
-    <?php render_names('Photographs from the Wedding of'); ?>
-    <?php render_dateline(); ?>
-    <?php render_barn(); ?>
+    <?php render_masthead('Photographs from the Wedding of'); ?>
     <?php render_divider(); ?>
 
     <?php if (empty($cfg['uploads_open'])): ?>
@@ -28,8 +26,7 @@ render_head(
       <h2 class="title">Our Day, Through Your Eyes</h2>
 
       <p class="body" style="margin-top:var(--space-2)">
-        Add any photographs or videos you took. There is nothing to install
-        and nothing to sign in to.
+        Add your photographs and videos — no sign-in needed.
       </p>
 
       <form class="card" data-uploader onsubmit="return false"
