@@ -38,6 +38,16 @@ $redirectUri = $scheme . '://' . $host . $path;
 
 $pendingFile = store_path('install.json');
 
+// A half-finished attempt would otherwise trap the wizard on the "connect"
+// screen forever, with no route back to the form. Let it be cleared.
+if ($installing && isset($_GET['restart'])) {
+    @unlink($pendingFile);
+    @unlink($pendingFile . '.lock');
+    unset($_SESSION['installing']);
+    header('Location: ' . $path);
+    exit;
+}
+
 // ---------------------------------------------------------------------------
 // Re-auth mode: sign in before anything happens.
 // ---------------------------------------------------------------------------
@@ -48,6 +58,46 @@ if (!$installing && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POS
         $_SESSION['admin'] = true;
     } else {
         $error = 'That password did not match.';
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Install mode, manual route for an attempt already in progress.
+//
+// The client id, secret and password were captured on the first screen, so
+// only the refresh token is still missing.
+// ---------------------------------------------------------------------------
+if ($installing && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
+    && isset($_POST['pending_refresh_token'])) {
+
+    $saved = store_read_json($pendingFile);
+    $refresh = trim((string) $_POST['pending_refresh_token']);
+
+    if (!$saved) {
+        $error = 'That attempt has expired. Please start again.';
+    } elseif ($refresh === '') {
+        $error = 'Please paste the refresh token.';
+    } else {
+        try {
+            $outcome = install_finalise(
+                $saved['google_client_id'],
+                $saved['google_client_secret'],
+                $refresh,
+                $saved['admin_password_hash']
+            );
+            if ($outcome['ok']) {
+                $result  = $outcome;
+                $written = $outcome['written'];
+                if ($written) {
+                    @unlink($pendingFile);
+                    @unlink($pendingFile . '.lock');
+                }
+            } else {
+                $error = $outcome['error'];
+            }
+        } catch (Throwable $err) {
+            $error = $err->getMessage();
+        }
     }
 }
 
@@ -449,6 +499,34 @@ render_head('Setup — Ali & Robert');
       </p>
       <a class="btn btn--spaced" href="<?= e($consentUrl) ?>">Connect Google Drive</a>
     </div>
+
+<?php if ($installing): ?>
+
+    <?php render_divider(); ?>
+
+    <h2 class="title">Blocked by Your Host?</h2>
+    <p class="body" style="margin-top:var(--space-2)">
+      If that button returns <em>Not Acceptable</em> or mentions
+      <em>Mod_Security</em>, your host is refusing Google's reply. Fetch the
+      refresh token yourself — see README.md, <strong>If your host blocks the
+      Google callback</strong> — and paste it here. Everything else you already
+      entered is remembered.
+    </p>
+
+    <form class="card" method="post" style="margin-top:var(--space-3)">
+      <div class="field">
+        <label for="pending_refresh_token">Refresh Token</label>
+        <input type="text" id="pending_refresh_token" name="pending_refresh_token"
+               required autocomplete="off" spellcheck="false" placeholder="starts with 1//">
+      </div>
+      <button class="btn btn--spaced" type="submit">Finish Setup</button>
+    </form>
+
+    <p class="linkrow" style="margin-top:var(--space-3)">
+      <a href="?restart=1">Start Over</a>
+    </p>
+
+<?php endif; ?>
 
 <?php endif; ?>
 
