@@ -93,7 +93,7 @@ $safeName  = str_replace(['/', '\\', "\0"], '-', $name);
 $driveName = $safeFrom !== '' ? "{$safeFrom} — {$safeName}" : $safeName;
 
 try {
-    $sessionUrl = drive_create_resumable_session($cfg, $driveName, $mime, $size);
+    $sessionUrl = drive_create_resumable_session($cfg, $driveName, $mime, $size, site_origin());
 } catch (DriveError $err) {
     error_log('[wedding-uploads] ' . $err->getMessage());
     json_error('Could not start the upload. Please try again in a moment.', 502);

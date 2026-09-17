@@ -68,7 +68,7 @@ function drive_access_token(array $cfg): string
  * file bytes travel from the guest's phone straight to Google. The web host
  * never sees them, so its upload limits and bandwidth are irrelevant.
  */
-function drive_create_resumable_session(array $cfg, string $name, string $mime, int $size): string
+function drive_create_resumable_session(array $cfg, string $name, string $mime, int $size, string $origin = ''): string
 {
     $token = drive_access_token($cfg);
 
@@ -77,13 +77,23 @@ function drive_create_resumable_session(array $cfg, string $name, string $mime, 
         'parents' => [$cfg['drive_folder_id']],
     ];
 
+    $headers = [
+        'Authorization: Bearer ' . $token,
+        'Content-Type: application/json; charset=UTF-8',
+        'X-Upload-Content-Type: ' . $mime,
+        'X-Upload-Content-Length: ' . $size,
+    ];
+
+    // Google fixes the session's CORS policy from the Origin on this creating
+    // request, and ignores the Origin on the browser's later PUTs. Omit it and
+    // the browser is refused with no Access-Control-Allow-Origin — which looks
+    // exactly like a dropped connection from the phone's side.
+    if ($origin !== '') {
+        $headers[] = 'Origin: ' . $origin;
+    }
+
     $res = drive_http('POST', DRIVE_UPLOAD_API . '/files?uploadType=resumable&supportsAllDrives=true', [
-        'headers' => [
-            'Authorization: Bearer ' . $token,
-            'Content-Type: application/json; charset=UTF-8',
-            'X-Upload-Content-Type: ' . $mime,
-            'X-Upload-Content-Length: ' . $size,
-        ],
+        'headers' => $headers,
         'body'           => json_encode($metadata, JSON_UNESCAPED_UNICODE),
         'capture_headers' => true,
     ]);

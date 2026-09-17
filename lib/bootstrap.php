@@ -54,6 +54,24 @@ function read_json_body(): array
     return is_array($data) ? $data : [];
 }
 
+/**
+ * This site's own scheme+host, e.g. https://wedding.example.com
+ *
+ * Google decides a resumable upload session's CORS policy from the Origin on
+ * the request that *creates* the session. The session is created here, server
+ * side, so the origin must be stated explicitly or the browser's upload is
+ * refused. Derived from the request rather than taken from the client, so it
+ * cannot be steered by a caller.
+ */
+function site_origin(): string
+{
+    $https  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+           || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $scheme = $https ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    return $scheme . '://' . $host;
+}
+
 function client_ip(): string
 {
     // Bluehost sits behind a proxy layer, so prefer the forwarded address when

@@ -159,13 +159,17 @@
       var end   = Math.min(start + CHUNK_SIZE, file.size);
       var slice = file.slice(start, end);
 
+      var moved = false;
       var xhr = new XMLHttpRequest();
       xhr.open('PUT', url, true);
       xhr.setRequestHeader('Content-Range',
         'bytes ' + start + '-' + (end - 1) + '/' + file.size);
 
       xhr.upload.onprogress = function (evt) {
-        if (evt.lengthComputable) onProgress(start + evt.loaded);
+        if (evt.lengthComputable) {
+          if (evt.loaded > 0) moved = true;
+          onProgress(start + evt.loaded);
+        }
       };
 
       xhr.onload = function () {
@@ -180,8 +184,20 @@
         reject(new Error('Upload rejected (' + xhr.status + ')'));
       };
 
-      xhr.onerror   = function () { reject(new Error('Connection lost')); };
-      xhr.ontimeout = function () { reject(new Error('Connection timed out')); };
+      xhr.onerror = function () {
+        // status 0 after onerror means the browser never got a usable reply:
+        // either the network dropped, or the request was refused outright
+        // (a CORS rejection surfaces here, indistinguishable at this level).
+        // `moved` tells the two apart: a refusal transfers nothing at all.
+        var err = new Error(moved ? 'Connection lost' : 'Upload refused');
+        err.kind = moved ? 'dropped' : 'refused';
+        reject(err);
+      };
+      xhr.ontimeout = function () {
+        var err = new Error('Connection timed out');
+        err.kind = 'dropped';
+        reject(err);
+      };
       xhr.send(slice);
     });
   }
@@ -219,6 +235,7 @@
     }
 
     var attempts = 0;
+    var refusals = 0;
 
     while (offset < file.size) {
       try {
@@ -236,6 +253,15 @@
         }
         offset = result.next;
       } catch (err) {
+        // A refusal is a configuration fault, not a flaky connection. Retrying
+        // just refills the bar and buries the cause, so fail fast and say so.
+        if (err.kind === 'refused') {
+          refusals++;
+          if (refusals >= 2) {
+            throw new Error('Google refused the upload — this is a site setup problem, not your connection');
+          }
+        }
+
         attempts++;
         if (attempts >= MAX_ATTEMPTS) throw err;
 
