@@ -3,84 +3,75 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../lib/bootstrap.php';
 $cfg = config();
+
+render_head(
+    'Share Your Photographs — Ali & Robert',
+    'Add the photographs and videos you took at our wedding.'
+);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Share your photos — <?= e($cfg['couple_names']) ?></title>
-<meta name="description" content="Upload the photos and videos you took at our wedding.">
-<meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/styles.css">
-</head>
-<body>
-<main class="wrap">
+  <main class="wrap">
 
-  <header class="masthead">
-    <h1 class="masthead__names"><?= e($cfg['couple_names']) ?></h1>
-    <?php if (!empty($cfg['wedding_date'])): ?>
-      <p class="masthead__date"><?= e($cfg['wedding_date']) ?></p>
-    <?php endif; ?>
-  </header>
+    <?php render_names('Photographs from the Wedding of'); ?>
+    <?php render_dateline(); ?>
+    <?php render_barn(); ?>
+    <?php render_divider(); ?>
 
-  <p class="lede">
-    We would love to see the day through your eyes. Add any photos or videos
-    you took — there is no app to install and nothing to sign in to.
-  </p>
+    <?php if (empty($cfg['uploads_open'])): ?>
 
-  <?php if (empty($cfg['uploads_open'])): ?>
-
-    <div class="card">
-      <p style="text-align:center;margin:0">
-        Uploads are now closed. Thank you to everyone who shared something!
+      <h2 class="title">Thank You</h2>
+      <p class="body" style="margin-top:var(--space-2)">
+        Sharing is now closed. Thank you to everyone who sent us something.
       </p>
-    </div>
 
-  <?php else: ?>
+    <?php else: ?>
 
-    <form class="card" data-uploader onsubmit="return false">
+      <h2 class="title">Our Day, Through Your Eyes</h2>
 
-      <div class="field">
-        <label for="from">Your name <span style="text-transform:none">(optional)</span></label>
-        <input type="text" id="from" name="from" autocomplete="name"
-               placeholder="So we know who to thank">
-      </div>
+      <p class="body" style="margin-top:var(--space-2)">
+        Add any photographs or videos you took. There is nothing to install
+        and nothing to sign in to.
+      </p>
 
-      <!--
-        No `capture` attribute: that would force the camera open. Guests want
-        their existing camera roll.
-      -->
-      <input type="file" name="files" accept="image/*,video/*" multiple hidden>
+      <form class="card" data-uploader onsubmit="return false"
+            style="margin-top:var(--space-3)">
 
-      <button type="button" class="btn btn--ghost" data-pick>
-        Choose photos &amp; videos
-      </button>
+        <div class="field">
+          <label for="from">Your Name</label>
+          <input type="text" id="from" name="from" autocomplete="name"
+                 placeholder="So we know who to thank">
+        </div>
 
-      <ul class="up-list" data-list></ul>
+        <!--
+          No `capture` attribute: that would force the camera open. Guests
+          want their existing camera roll.
+        -->
+        <input type="file" name="files" accept="image/*,video/*" multiple hidden>
 
-      <div class="field" style="margin-top:20px">
-        <label for="note">Leave a note <span style="text-transform:none">(optional)</span></label>
-        <textarea id="note" name="note" placeholder="A memory from the day…"></textarea>
-      </div>
+        <button type="button" class="btn btn--spaced" data-pick>Choose Photos &amp; Videos</button>
 
-      <button type="button" class="btn" data-start hidden>Upload</button>
+        <ul class="up-list" data-list></ul>
 
-      <p class="status" data-status></p>
-    </form>
+        <div class="field" style="margin-top:var(--space-3)">
+          <label for="note">Leave a Note</label>
+          <textarea id="note" name="note" placeholder="A memory from the day…"></textarea>
+        </div>
 
-    <p class="help">
-      Large videos can take a few minutes. If your connection drops, just open
-      this page again and tap upload — it picks up where it left off.
-    </p>
+        <button type="button" class="btn btn--spaced" data-start hidden>Upload</button>
 
-  <?php endif; ?>
+        <p class="status" data-status></p>
+      </form>
 
-  <p class="help">
-    <a href="gallery.php">See the photos everyone has shared →</a>
-  </p>
+      <p class="help">
+        Large videos can take a few minutes. If your connection drops, open
+        this page again and tap upload — it carries on from where it stopped.
+      </p>
 
-</main>
-<script src="assets/upload.js"></script>
-</body>
-</html>
+    <?php endif; ?>
+
+    <?php render_divider(); ?>
+
+    <p class="linkrow"><a href="gallery.php">See the Gallery</a></p>
+
+  </main>
+  <script src="assets/upload.js"></script>
+<?php render_foot(); ?>

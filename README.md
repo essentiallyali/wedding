@@ -147,12 +147,51 @@ To close uploads after the event without taking the page down, set
 
 ---
 
-## Restyling
+## Design
 
-Every colour, font and measurement is a CSS custom property in the `:root` block
-at the top of `public/assets/styles.css`. Drop in the tokens from the design
-system and the whole site follows — no other file needs to change. The current
-values are a deliberately plain placeholder.
+The site is built on the **Ali & Robert** design system: pale gold (`#f7e7a7`)
+on deep indigo (`#0a0935`), Alice throughout, lit by the string-light garland
+and anchored by the Round Barn engraving.
+
+Tokens live in the `:root` block at the top of `public/assets/styles.css`, taken
+verbatim from the system's `tokens.json`. Page furniture — garland, confetti,
+barn, scroll divider — is in `lib/view.php` so the three pages cannot drift
+apart.
+
+How the system's rules landed here:
+
+- **One ink, one ground.** Every word is gold on indigo. There is no second
+  text colour, so upload progress and errors are distinguished by wording and
+  by `gold-confetti`, never by red or green.
+- **Text never sits on a light ground.** A photograph *is* a light ground, so
+  the uploader's name sits below its tile rather than over it. The video marker
+  is a gold rule on an indigo disc, keeping gold-on-indigo even on top of a
+  photo.
+- **No icon set.** There are no ticks, arrows or emoji. Selection is a gold dot;
+  the only glyph-like mark used is the `|` separator.
+- **Square corners**, 4px on buttons only. No borders, shadows or gradients —
+  the sole glow is the garland artwork.
+
+### Brand assets
+
+`public/assets/brand/` holds web-sized copies of the system artwork. The
+originals are print-resolution (the barn is 1800px, 708KB); these are resized
+and palette-quantised to roughly a seventh of that, which is invisible at
+display size and matters a great deal to a guest on hotel wifi.
+
+| File | From | Web size |
+|------|------|----------|
+| `round-barn.png` | `Illustrations/round-barn.png` | 900px, 105KB |
+| `string-lights.png` | `Illustrations/string-lights.png` | 1400px, 80KB |
+| `scroll-divider.png` | `Ornaments/scroll-divider.png` | 480px, 3KB |
+| `confetti-corner.svg` | `Ornaments/confetti-corner.svg` | unchanged, 3KB |
+
+Fonts are **self-hosted** in `public/assets/fonts/` (Alice 400, Cardo 400/700,
+latin and latin-ext only). Guests open this on bad connections; pulling fonts
+from Google would add a third-party origin and a round trip for no benefit.
+Regenerate them only if the type stack changes.
+
+To restyle, edit the `:root` tokens. Nothing else hard-codes a colour.
 
 ---
 

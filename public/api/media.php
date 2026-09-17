@@ -78,8 +78,11 @@ if ($bytes === null) {
     // placeholder with a short cache so the gallery retries shortly.
     header('Content-Type: image/svg+xml');
     header('Cache-Control: private, max-age=60');
+    // Indigo ground with a faint gold wash, so a video still being processed
+    // by Drive reads as part of the design rather than a broken image.
     echo '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 3">'
-       . '<rect width="4" height="3" fill="#e8e2d9"/></svg>';
+       . '<rect width="4" height="3" fill="#0a0935"/>'
+       . '<rect width="4" height="3" fill="#f7e7a7" opacity="0.08"/></svg>';
     exit;
 }
 

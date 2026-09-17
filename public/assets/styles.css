@@ -1,185 +1,330 @@
 /* ==========================================================================
-   PLACEHOLDER SKIN
+   Ali & Robert — gold on midnight, under string lights.
 
-   Everything visual lives in the tokens below. When the design system from
-   Claude Design is ready, replace this :root block with those values and the
-   whole site follows — no other file needs to change.
+   Tokens below are taken verbatim from the design system's tokens.json.
+   Rule of the system: one background, one ink, no exceptions. Every word is
+   gold-invite on indigo-invite. Never text on a light ground.
    ========================================================================== */
 
+/* Fonts are self-hosted rather than pulled from Google. Guests open this on
+   venue wifi and hotel data; removing a third-party origin removes a point of
+   failure and a round trip. IM Fell Double Pica is not included — it belongs
+   to the seating list and banner, neither of which appear on this site. */
+@import url("fonts.css");
+
 :root {
-  /* Colour */
-  --c-bg:        #faf8f5;
-  --c-surface:   #ffffff;
-  --c-ink:       #2b2724;
-  --c-ink-soft:  #6f675f;
-  --c-line:      #e4ddd3;
-  --c-accent:    #8a7357;
-  --c-accent-ink:#ffffff;
-  --c-ok:        #4a7c59;
-  --c-warn:      #a4553c;
+  /* Colour — the only two that carry text */
+  --indigo-invite: #0a0935;
+  --gold-invite:   #f7e7a7;
+
+  /* Artwork inks. Never text. */
+  --gold-signage:  #f3e996;
+  --gold-confetti: #e0b787;
+
+  --surface:     var(--indigo-invite);
+  --ink:         var(--gold-invite);
+  --button-fill: var(--indigo-invite);
+  --button-ink:  var(--gold-invite);
+  --button-hover:var(--gold-invite);
 
   /* Type */
-  --f-display: Georgia, 'Times New Roman', serif;
-  --f-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --fs-display: clamp(2rem, 7vw, 3.25rem);
-  --fs-body:    1rem;
-  --tracking-display: 0.01em;
+  --font-serif:    "Alice", Georgia, "Times New Roman", serif;
+  --font-caps:     "Cardo", Georgia, serif;
+  --font-script:   "Belina", "Cardo", Georgia, serif;
+  --font-oldstyle: "IM Fell Double Pica", Georgia, serif;
 
-  /* Form */
-  --radius:  10px;
-  --gutter:  20px;
-  --measure: 34rem;
+  /* Spacing */
+  --space-1:  8px;
+  --space-2: 16px;
+  --space-3: 32px;
+  --space-4: 64px;
+
+  /* Radius */
+  --radius-none:   0;
+  --radius-button: 4px;
+  --radius-dot:    50%;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Author `display` rules (.btn, .lightbox) outrank the UA sheet's
+   [hidden]{display:none}, so state it explicitly or hidden elements show. */
+[hidden] { display: none !important; }
+
+html { background: var(--surface); }
+
 body {
   margin: 0;
-  padding: 0;
-  background: var(--c-bg);
-  color: var(--c-ink);
-  font-family: var(--f-body);
-  font-size: var(--fs-body);
-  line-height: 1.55;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  text-align: center;
   -webkit-font-smoothing: antialiased;
+  /* Confetti scatters in from the corners and must not spill a scrollbar. */
+  overflow-x: hidden;
+}
+
+a { color: var(--ink); }
+
+/* --- Page shell ---------------------------------------------------------- */
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
 .wrap {
-  max-width: var(--measure);
+  position: relative;
+  z-index: 2;
+  max-width: 34rem;
   margin: 0 auto;
-  padding: 48px var(--gutter) 64px;
+  /* space-4 page margins; the drop below the lights is also space-4. */
+  padding: 0 var(--space-3) var(--space-4);
 }
 
-.wrap--wide { max-width: 68rem; }
+.wrap--wide { max-width: 72rem; }
 
-/* --- Masthead ------------------------------------------------------------ */
+/* String lights bleed off the top edge — the system's one source of glow.
+   Kept in normal flow (rather than absolutely positioned) so the garland's
+   own height pushes the names clear of it, with the space-4 drop the system
+   asks for. Absolute positioning here overlapped the names on narrow phones. */
+.lights {
+  display: block;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130%;
+  max-width: 1400px;
+  height: auto;
+  margin-bottom: var(--space-4);
+  pointer-events: none;
+  z-index: 1;
+}
 
-.masthead { text-align: center; margin-bottom: 36px; }
+/* Gold dot confetti, two opposite corners as the website does. Decoration
+   only — it is kept clear of text by sitting behind the content layer. */
+.confetti {
+  position: absolute;
+  width: var(--confetti-size, 320px);
+  height: var(--confetti-size, 320px);
+  /* The supplied SVG is already inked in gold-confetti, so it is used as-is
+     rather than masked — one fewer thing to go wrong on an old browser. */
+  background: url("brand/confetti-corner.svg") no-repeat 0 0 / 100% 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+}
 
-.masthead__names {
-  font-family: var(--f-display);
-  font-size: var(--fs-display);
-  letter-spacing: var(--tracking-display);
+.confetti.tl { top: 0; left: 0; }
+.confetti.br { bottom: 0; right: 0; transform: scale(-1, -1); }
+
+/* The pipe separator, the only glyph-like mark the system allows besides the
+   ampersand and the d20. */
+.bar { margin: 0 var(--space-1); }
+
+/* --- Type ---------------------------------------------------------------- */
+
+.names {
+  font-family: var(--font-serif);
+  /* 56px on the invitation; scaled down so it never wraps on a phone. */
+  font-size: clamp(2.125rem, 9vw, 3.5rem);
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   font-weight: 400;
-  margin: 0 0 6px;
+  margin: 0;
 }
 
-.masthead__date {
-  color: var(--c-ink-soft);
-  font-size: 0.875rem;
-  letter-spacing: 0.16em;
+.names .amp {
+  display: block;
+  font-size: 0.62em;
+  line-height: 1;
+}
+
+.lead {
+  font-size: clamp(1rem, 4vw, 1.25rem);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.title {
+  font-size: clamp(1.5rem, 6vw, 2.125rem);
+  letter-spacing: 0.03em;
+  font-weight: 400;
+  margin: 0;
+}
+
+.dateline {
+  font-size: clamp(1.125rem, 5vw, 1.5rem);
+  letter-spacing: 0.12em;
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0;
+}
+
+.label {
+  font-size: clamp(0.875rem, 3.5vw, 1.25rem);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   margin: 0;
 }
 
-.lede {
-  text-align: center;
-  color: var(--c-ink-soft);
-  margin: 0 auto 32px;
-  max-width: 30rem;
-}
+.body { font-size: 17px; line-height: 1.5; letter-spacing: 0.03em; margin: 0; }
 
-/* --- Card ---------------------------------------------------------------- */
-
-.card {
-  background: var(--c-surface);
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
-  padding: 24px;
-}
-
-.field { margin-bottom: 16px; }
-
-.field label {
-  display: block;
-  font-size: 0.8125rem;
-  letter-spacing: 0.06em;
+.caps-spaced {
+  font-family: var(--font-caps);
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--c-ink-soft);
-  margin-bottom: 6px;
+  margin: 0;
 }
 
-.field input[type=text],
-.field textarea {
-  width: 100%;
-  padding: 11px 13px;
-  font: inherit;
-  color: inherit;
-  background: var(--c-bg);
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
+/* --- Ornament ------------------------------------------------------------ */
+
+/* The Round Barn sketch sits centred below the names. It appears on every
+   piece in this system, so every page here carries it. */
+.barn {
+  display: block;
+  width: min(260px, 52vw);
+  height: auto;
+  margin: var(--space-3) auto 0;
 }
 
-.field textarea { resize: vertical; min-height: 68px; }
+.barn--small { width: min(150px, 34vw); }
 
-.field input:focus, .field textarea:focus {
-  outline: 2px solid var(--c-accent);
-  outline-offset: 1px;
+/* One scroll flourish per section; never stack two. */
+.divider {
+  display: block;
+  margin: var(--space-3) auto;
+  width: min(240px, 60%);
+  height: auto;
 }
+
+.stack   > * + * { margin-top: var(--space-2); }
+.blocks  > * + * { margin-top: var(--space-3); }
 
 /* --- Buttons ------------------------------------------------------------- */
 
 .btn {
   display: inline-block;
   width: 100%;
-  padding: 15px 20px;
-  font: inherit;
-  font-weight: 600;
-  text-align: center;
+  max-width: 22rem;
+  min-height: 52px;               /* comfortably tappable, one-handed */
+  padding: 14px 24px;
+  background: var(--button-fill);
+  color: var(--button-ink);
+  border: 1px solid var(--button-ink);
+  border-radius: var(--radius-button);
+  font: 400 18px/1.2 var(--font-serif);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   text-decoration: none;
-  color: var(--c-accent-ink);
-  background: var(--c-accent);
-  border: 1px solid var(--c-accent);
-  border-radius: var(--radius);
   cursor: pointer;
-  /* Comfortably tappable — most guests are one-handed holding a drink. */
-  min-height: 52px;
 }
 
-.btn:hover { filter: brightness(1.07); }
-
-.btn--ghost {
-  background: transparent;
-  color: var(--c-accent);
+/* Hover styles are gated on a real pointer. On a touchscreen :hover sticks
+   after a tap, which would leave a button looking stuck in its inverted
+   state until you tapped elsewhere. */
+@media (hover: hover) {
+  .btn:hover { background: var(--button-hover); color: var(--indigo-invite); }
+  .btn[disabled]:hover { background: var(--button-fill); color: var(--button-ink); }
 }
+.btn:focus-visible { outline: 2px solid var(--gold-invite); outline-offset: 3px; }
+.btn[disabled] { opacity: 0.4; cursor: default; }
+
+.btn--spaced { margin-top: var(--space-3); }
 
 .btn--small {
   width: auto;
   min-height: 0;
-  padding: 7px 13px;
-  font-size: 0.875rem;
+  padding: 9px 16px;
+  font-size: 15px;
 }
 
-/* --- Upload list --------------------------------------------------------- */
+.btn--danger { border-color: var(--gold-confetti); color: var(--gold-confetti); }
+@media (hover: hover) {
+  .btn--danger:hover { background: var(--gold-confetti); color: var(--indigo-invite); }
+}
 
-.up-list { list-style: none; margin: 20px 0 0; padding: 0; }
+.linkrow {
+  font-size: 0.9375rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* --- Form ---------------------------------------------------------------- */
+
+/* Cards are square-cornered and unbordered per the system; inputs carry the
+   same 1px gold rule the button does, so they read as one family. */
+.card { border-radius: var(--radius-none); }
+
+.field { text-align: left; }
+
+.field label {
+  display: block;
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-family: var(--font-caps);
+  margin-bottom: var(--space-1);
+}
+
+.field input[type=text],
+.field input[type=password],
+.field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid rgba(247, 231, 167, 0.45);
+  border-radius: var(--radius-button);
+  font: 400 17px/1.5 var(--font-serif);
+  letter-spacing: 0.03em;
+}
+
+.field textarea { resize: vertical; min-height: 76px; }
+
+.field input::placeholder,
+.field textarea::placeholder { color: rgba(247, 231, 167, 0.45); }
+
+.field input:focus, .field textarea:focus {
+  outline: 2px solid var(--gold-invite);
+  outline-offset: 2px;
+  border-color: var(--gold-invite);
+}
+
+/* --- Upload queue -------------------------------------------------------- */
+
+.up-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; text-align: left; }
 
 .up-item {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 2px 12px;
-  padding: 11px 0;
-  border-top: 1px solid var(--c-line);
-  font-size: 0.9375rem;
+  gap: 6px var(--space-2);
+  padding: 12px 0;
+  border-top: 1px solid rgba(247, 231, 167, 0.25);
+  font-size: 15px;
 }
 
-.up-item__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+.up-item__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .up-item__meta {
-  color: var(--c-ink-soft);
+  font-family: var(--font-caps);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   font-variant-numeric: tabular-nums;
-  font-size: 0.875rem;
 }
 
 .up-item__bar {
   grid-column: 1 / -1;
-  height: 3px;
-  background: var(--c-line);
-  border-radius: 2px;
+  height: 2px;
+  background: rgba(247, 231, 167, 0.25);
   overflow: hidden;
 }
 
@@ -187,80 +332,113 @@ body {
   display: block;
   height: 100%;
   width: 0;
-  background: var(--c-accent);
+  background: var(--gold-invite);
   transition: width 0.25s ease;
 }
 
-.up-item.is-done .up-item__meta  { color: var(--c-ok); }
-.up-item.is-done .up-item__bar span { background: var(--c-ok); }
-.up-item.is-error .up-item__meta { color: var(--c-warn); }
+.up-item.is-error .up-item__meta { color: var(--gold-confetti); }
 
-.status { margin-top: 16px; text-align: center; font-size: 0.9375rem; }
-.status[data-tone=done]  { color: var(--c-ok); }
-.status[data-tone=error] { color: var(--c-warn); }
-
-.help {
-  margin-top: 28px;
-  text-align: center;
-  font-size: 0.875rem;
-  color: var(--c-ink-soft);
+.status {
+  margin-top: var(--space-3);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  min-height: 1.5em;
 }
 
-.help a { color: var(--c-accent); }
+.status[data-tone=error] { color: var(--gold-confetti); }
+
+.help {
+  margin-top: var(--space-3);
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.8;
+}
 
 /* --- Gallery ------------------------------------------------------------- */
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
-  margin-top: 28px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  text-align: left;
 }
 
 .tile {
-  position: relative;
-  display: block;
-  aspect-ratio: 1;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--c-line);
-  border: none;
+  /* A <button> does not size to its content reliably when a child uses
+     aspect-ratio — the frame filled the whole button and pushed the caption
+     out into the grid gap. Flex column forces correct intrinsic sizing. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
   padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.tile img {
+.tile__frame {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-none);   /* square corners, per the system */
+  overflow: hidden;
+  background: rgba(247, 231, 167, 0.08);
+}
+
+.tile__frame img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
+/* The uploader's name sits BELOW the picture on indigo, never over the photo:
+   the system forbids text on a light ground, and a snapshot is a light ground. */
+.tile__from {
+  display: block;
+  margin-top: var(--space-1);
+  font-family: var(--font-caps);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Video marker: a gold rule on an indigo disc, so it stays gold-on-indigo
+   even sitting on top of a photograph. No icon set is used. */
 .tile__play {
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: 1.75rem;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px; height: 44px;
+  border: 1px solid var(--gold-invite);
+  border-radius: var(--radius-dot);
+  background: rgba(10, 9, 53, 0.72);
   pointer-events: none;
 }
 
-.tile__from {
+.tile__play::after {
+  content: "";
   position: absolute;
-  left: 0; right: 0; bottom: 0;
-  padding: 14px 8px 6px;
-  font-size: 0.75rem;
-  color: #fff;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
-  pointer-events: none;
+  left: 52%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-left: 12px solid var(--gold-invite);
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
 }
+
+.tile:focus-visible .tile__frame { outline: 2px solid var(--gold-invite); outline-offset: 2px; }
 
 .empty {
-  text-align: center;
-  color: var(--c-ink-soft);
-  padding: 48px 0;
+  padding: var(--space-4) 0;
+  font-size: 17px;
+  opacity: 0.85;
 }
 
 /* --- Lightbox ------------------------------------------------------------ */
@@ -268,10 +446,10 @@ body {
 .lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(20, 17, 15, 0.94);
+  background: rgba(10, 9, 53, 0.97);
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: var(--space-3);
   z-index: 50;
 }
 
@@ -280,19 +458,25 @@ body {
 .lightbox img, .lightbox video {
   max-width: 100%;
   max-height: 82vh;
-  border-radius: var(--radius);
+  border-radius: var(--radius-none);
 }
 
 .lightbox__close {
   position: absolute;
-  top: 14px; right: 16px;
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 2rem;
-  line-height: 1;
+  top: var(--space-2); right: var(--space-2);
+  min-width: 44px; min-height: 44px;
+  background: transparent;
+  color: var(--gold-invite);
+  border: 1px solid var(--gold-invite);
+  border-radius: var(--radius-button);
+  font: 400 14px/1 var(--font-caps);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   cursor: pointer;
-  padding: 8px;
+}
+
+@media (hover: hover) {
+  .lightbox__close:hover { background: var(--gold-invite); color: var(--indigo-invite); }
 }
 
 /* --- Admin --------------------------------------------------------------- */
@@ -300,54 +484,71 @@ body {
 .admin-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-1);
   align-items: center;
-  margin: 20px 0;
-  padding: 14px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
+  justify-content: center;
+  margin: var(--space-3) 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid rgba(247, 231, 167, 0.25);
 }
 
 .admin-bar__count {
   margin-right: auto;
-  font-size: 0.9375rem;
-  color: var(--c-ink-soft);
+  font-family: var(--font-caps);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.tile--selectable.is-selected {
-  outline: 3px solid var(--c-accent);
-  outline-offset: -3px;
+.tile--selectable.is-selected .tile__frame {
+  outline: 2px solid var(--gold-invite);
+  outline-offset: -2px;
 }
 
+.tile--selectable.is-selected .tile__frame img { opacity: 0.55; }
+
+/* Selection is shown with a gold dot, not a tick glyph — the system has no
+   icon set. */
 .tile__tick {
   position: absolute;
-  top: 6px; left: 6px;
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--c-accent);
-  font-size: 0.8125rem;
-  line-height: 22px;
-  text-align: center;
-  font-weight: 700;
+  top: var(--space-1); left: var(--space-1);
+  width: 14px; height: 14px;
+  border-radius: var(--radius-dot);
+  background: var(--gold-invite);
 }
 
-.tabs { display: flex; gap: 6px; margin-bottom: 4px; }
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  justify-content: center;
+  margin-top: var(--space-3);
+}
 
 .tabs a {
-  padding: 7px 13px;
-  border-radius: var(--radius);
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
   text-decoration: none;
-  color: var(--c-ink-soft);
-  font-size: 0.875rem;
+  font-family: var(--font-caps);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .tabs a[aria-current=page] {
-  background: var(--c-accent);
-  color: var(--c-accent-ink);
+  border-color: var(--gold-invite);
+}
+
+/* --- Responsive & motion ------------------------------------------------- */
+
+@media (max-width: 480px) {
+  .wrap { padding: 0 var(--space-2) var(--space-4); }
+  .confetti { --confetti-size: 150px; }
+  .lights { width: 150%; margin-bottom: var(--space-3); }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
+  * { transition: none !important; animation: none !important; }
 }

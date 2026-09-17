@@ -8,107 +8,112 @@ $items = manifest_by_status('approved');
 
 // Newest first.
 usort($items, fn($a, $b) => ($b['uploaded_at'] ?? 0) <=> ($a['uploaded_at'] ?? 0));
+
+render_head('The Gallery — Ali & Robert');
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gallery — <?= e($cfg['couple_names']) ?></title>
-<meta name="robots" content="noindex">
-<link rel="stylesheet" href="assets/styles.css">
-</head>
-<body>
-<main class="wrap wrap--wide">
+  <main class="wrap wrap--wide">
 
-  <header class="masthead">
-    <h1 class="masthead__names">Our Day, Your Eyes</h1>
-    <p class="masthead__date"><?= count($items) ?> shared so far</p>
-  </header>
+    <?php render_names('Photographs from the Wedding of'); ?>
+    <?php render_dateline(); ?>
+    <?php render_barn(true); ?>
+    <?php render_divider(); ?>
 
-  <p class="lede">
-    <a href="index.php">Add your own photos and videos →</a>
-  </p>
+    <h2 class="title">The Gallery</h2>
 
-  <?php if (!$items): ?>
+    <?php if (!$items): ?>
 
-    <p class="empty">Nothing here yet. Be the first to share something!</p>
+      <p class="empty">
+        Nothing here yet.<br>Be the first to share something from the day.
+      </p>
 
-  <?php else: ?>
+    <?php else: ?>
 
-    <div class="grid">
-      <?php foreach ($items as $item): ?>
-        <?php
-          $id      = $item['file_id'];
-          $isVideo = !empty($item['is_video']);
-        ?>
-        <button class="tile"
-                data-id="<?= e($id) ?>"
-                data-video="<?= $isVideo ? '1' : '0' ?>"
-                aria-label="Open <?= e($item['name']) ?>">
-          <img src="api/media.php?id=<?= e($id) ?>&amp;size=thumb&amp;w=500"
-               alt="" loading="lazy" decoding="async">
-          <?php if ($isVideo): ?>
-            <span class="tile__play" aria-hidden="true">▶</span>
-          <?php endif; ?>
-          <?php if (!empty($item['from'])): ?>
-            <span class="tile__from"><?= e($item['from']) ?></span>
-          <?php endif; ?>
-        </button>
-      <?php endforeach; ?>
-    </div>
+      <p class="label" style="margin-top:var(--space-2)">
+        <?= count($items) ?> Shared
+      </p>
 
-  <?php endif; ?>
+      <div class="grid">
+        <?php foreach ($items as $item): ?>
+          <?php
+            $id      = $item['file_id'];
+            $isVideo = !empty($item['is_video']);
+          ?>
+          <button class="tile"
+                  data-id="<?= e($id) ?>"
+                  data-video="<?= $isVideo ? '1' : '0' ?>"
+                  aria-label="Open <?= e($item['name']) ?>">
+            <span class="tile__frame">
+              <img src="api/media.php?id=<?= e($id) ?>&amp;size=thumb&amp;w=500"
+                   alt="" loading="lazy" decoding="async">
+              <?php if ($isVideo): ?>
+                <span class="tile__play" aria-hidden="true"></span>
+              <?php endif; ?>
+            </span>
+            <?php if (!empty($item['from'])): ?>
+              <span class="tile__from"><?= e($item['from']) ?></span>
+            <?php endif; ?>
+          </button>
+        <?php endforeach; ?>
+      </div>
 
-</main>
+    <?php endif; ?>
 
-<div class="lightbox" hidden data-lightbox>
-  <button class="lightbox__close" data-close aria-label="Close">&times;</button>
-  <div data-stage></div>
-</div>
+    <?php render_divider(); ?>
 
-<script>
-/* Full-size media is only fetched when a tile is actually opened, so the grid
-   stays light even on a phone with a hundred items in it. */
-(function () {
-  var box   = document.querySelector('[data-lightbox]');
-  var stage = box.querySelector('[data-stage]');
+    <p class="linkrow"><a href="index.php">Add Your Photographs</a></p>
 
-  function close() {
-    stage.innerHTML = '';   // stops any playing video
-    box.hidden = true;
-  }
+  </main>
 
-  document.querySelectorAll('.tile').forEach(function (tile) {
-    tile.addEventListener('click', function () {
-      var id  = tile.dataset.id;
-      var src = 'api/media.php?id=' + encodeURIComponent(id) + '&size=full';
+  <div class="lightbox" hidden data-lightbox>
+    <button class="lightbox__close" data-close>Close</button>
+    <div data-stage></div>
+  </div>
 
-      if (tile.dataset.video === '1') {
-        var v = document.createElement('video');
-        v.src = src;
-        v.controls = true;
-        v.autoplay = true;
-        v.playsInline = true;
-        stage.appendChild(v);
-      } else {
-        var img = document.createElement('img');
-        img.src = src;
-        img.alt = '';
-        stage.appendChild(img);
-      }
-      box.hidden = false;
+  <script>
+  /* Full-size media is fetched only when a tile is opened, so the grid stays
+     light even with a hundred items on a phone. */
+  (function () {
+    var box   = document.querySelector('[data-lightbox]');
+    var stage = box.querySelector('[data-stage]');
+    var lastFocus = null;
+
+    function close() {
+      stage.innerHTML = '';   // stops any playing video
+      box.hidden = true;
+      if (lastFocus) lastFocus.focus();
+    }
+
+    document.querySelectorAll('.tile').forEach(function (tile) {
+      tile.addEventListener('click', function () {
+        lastFocus = tile;
+        var id  = tile.dataset.id;
+        var src = 'api/media.php?id=' + encodeURIComponent(id) + '&size=full';
+
+        if (tile.dataset.video === '1') {
+          var v = document.createElement('video');
+          v.src = src;
+          v.controls = true;
+          v.autoplay = true;
+          v.playsInline = true;
+          stage.appendChild(v);
+        } else {
+          var img = document.createElement('img');
+          img.src = src;
+          img.alt = '';
+          stage.appendChild(img);
+        }
+        box.hidden = false;
+        box.querySelector('[data-close]').focus();
+      });
     });
-  });
 
-  box.addEventListener('click', function (evt) {
-    if (evt.target === box || evt.target.hasAttribute('data-close')) close();
-  });
+    box.addEventListener('click', function (evt) {
+      if (evt.target === box || evt.target.hasAttribute('data-close')) close();
+    });
 
-  document.addEventListener('keydown', function (evt) {
-    if (evt.key === 'Escape' && !box.hidden) close();
-  });
-})();
-</script>
-</body>
-</html>
+    document.addEventListener('keydown', function (evt) {
+      if (evt.key === 'Escape' && !box.hidden) close();
+    });
+  })();
+  </script>
+<?php render_foot(); ?>

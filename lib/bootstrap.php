@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/drive.php';
+require_once __DIR__ . '/view.php';
 
 function config(): array
 {

@@ -3,7 +3,7 @@
  * Approval queue.
  *
  * Nothing a guest uploads reaches the gallery until it is approved here.
- * Rejecting hides an item but keeps the file in Drive; deleting removes it
+ * Rejecting hides an item but leaves the file in Drive; deleting removes it
  * from Drive permanently.
  */
 declare(strict_types=1);
@@ -51,171 +51,175 @@ if ($authed) {
         }
     }
 }
+
+render_head('Approvals — Ali & Robert');
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Approvals</title>
-<meta name="robots" content="noindex,nofollow">
-<link rel="stylesheet" href="assets/styles.css">
-</head>
-<body>
-<main class="wrap<?= $authed ? ' wrap--wide' : '' ?>">
+  <main class="wrap<?= $authed ? ' wrap--wide' : '' ?>">
 
 <?php if (!$authed): ?>
 
-  <header class="masthead">
-    <h1 class="masthead__names">Approvals</h1>
-  </header>
+    <?php render_names(); ?>
+    <?php render_barn(true); ?>
+    <?php render_divider(); ?>
 
-  <form class="card" method="post">
-    <div class="field">
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" autocomplete="current-password" autofocus>
-    </div>
-    <?php if ($error): ?>
-      <p class="status" data-tone="error"><?= e($error) ?></p>
-    <?php endif; ?>
-    <button class="btn" type="submit">Sign in</button>
-  </form>
+    <h2 class="title">Approvals</h2>
+
+    <form class="card" method="post" style="margin-top:var(--space-3)">
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"
+               autocomplete="current-password" autofocus>
+      </div>
+      <?php if ($error): ?>
+        <p class="status" data-tone="error"><?= e($error) ?></p>
+      <?php endif; ?>
+      <button class="btn btn--spaced" type="submit">Sign In</button>
+    </form>
 
 <?php else: ?>
 
-  <header class="masthead">
-    <h1 class="masthead__names">Approvals</h1>
-    <p class="masthead__date">
-      <?= $counts['pending'] ?> waiting ·
-      <?= $counts['approved'] ?> live ·
-      <a href="?logout=1">sign out</a>
+    <?php render_names(); ?>
+    <?php render_barn(true); ?>
+    <?php render_divider(); ?>
+
+    <h2 class="title">Approvals</h2>
+
+    <p class="label" style="margin-top:var(--space-2)">
+      <?= $counts['pending'] ?> Waiting
+      <span class="bar">|</span>
+      <?= $counts['approved'] ?> Live
     </p>
-  </header>
 
-  <nav class="tabs">
-    <?php foreach (['pending' => 'Waiting', 'approved' => 'Approved', 'rejected' => 'Hidden'] as $key => $label): ?>
-      <a href="?view=<?= $key ?>" <?= $view === $key ? 'aria-current="page"' : '' ?>>
-        <?= $label ?> (<?= $counts[$key] ?>)
-      </a>
-    <?php endforeach; ?>
-  </nav>
-
-  <div class="admin-bar">
-    <span class="admin-bar__count" data-count>None selected</span>
-    <button class="btn btn--small btn--ghost" data-select-all>Select all</button>
-    <?php if ($view !== 'approved'): ?>
-      <button class="btn btn--small" data-act="approve" disabled>Approve</button>
-    <?php endif; ?>
-    <?php if ($view !== 'rejected'): ?>
-      <button class="btn btn--small btn--ghost" data-act="reject" disabled>Hide</button>
-    <?php endif; ?>
-    <button class="btn btn--small btn--ghost" data-act="delete" disabled
-            style="color:var(--c-warn);border-color:var(--c-warn)">Delete</button>
-  </div>
-
-  <?php if (!$items): ?>
-    <p class="empty">Nothing in this list.</p>
-  <?php else: ?>
-    <div class="grid">
-      <?php foreach ($items as $item): ?>
-        <?php $id = $item['file_id']; ?>
-        <button class="tile tile--selectable"
-                data-id="<?= e($id) ?>"
-                title="<?= e(($item['from'] ?? '') . ' — ' . ($item['name'] ?? '')) ?>">
-          <img src="api/media.php?id=<?= e($id) ?>&amp;size=thumb&amp;w=400"
-               alt="" loading="lazy" decoding="async">
-          <span class="tile__tick" hidden>✓</span>
-          <?php if (!empty($item['is_video'])): ?>
-            <span class="tile__play" aria-hidden="true">▶</span>
-          <?php endif; ?>
-          <?php if (!empty($item['from'])): ?>
-            <span class="tile__from"><?= e($item['from']) ?></span>
-          <?php endif; ?>
-        </button>
+    <nav class="tabs">
+      <?php foreach (['pending' => 'Waiting', 'approved' => 'Approved', 'rejected' => 'Hidden'] as $key => $label): ?>
+        <a href="?view=<?= $key ?>" <?= $view === $key ? 'aria-current="page"' : '' ?>>
+          <?= $label ?> (<?= $counts[$key] ?>)
+        </a>
       <?php endforeach; ?>
+    </nav>
+
+    <div class="admin-bar">
+      <span class="admin-bar__count" data-count>None Selected</span>
+      <button class="btn btn--small" data-select-all>Select All</button>
+      <?php if ($view !== 'approved'): ?>
+        <button class="btn btn--small" data-act="approve" disabled>Approve</button>
+      <?php endif; ?>
+      <?php if ($view !== 'rejected'): ?>
+        <button class="btn btn--small" data-act="reject" disabled>Hide</button>
+      <?php endif; ?>
+      <button class="btn btn--small btn--danger" data-act="delete" disabled>Delete</button>
     </div>
-  <?php endif; ?>
 
-  <script>
-  (function () {
-    var CSRF = <?= json_encode(csrf_token()) ?>;
-    var selected = new Set();
+    <?php if (!$items): ?>
+      <p class="empty">Nothing in this list.</p>
+    <?php else: ?>
+      <div class="grid">
+        <?php foreach ($items as $item): ?>
+          <?php $id = $item['file_id']; ?>
+          <button class="tile tile--selectable"
+                  data-id="<?= e($id) ?>"
+                  title="<?= e(trim(($item['from'] ?? '') . ' — ' . ($item['name'] ?? ''), ' —')) ?>">
+            <span class="tile__frame">
+              <img src="api/media.php?id=<?= e($id) ?>&amp;size=thumb&amp;w=400"
+                   alt="" loading="lazy" decoding="async">
+              <span class="tile__tick" hidden></span>
+              <?php if (!empty($item['is_video'])): ?>
+                <span class="tile__play" aria-hidden="true"></span>
+              <?php endif; ?>
+            </span>
+            <?php if (!empty($item['from'])): ?>
+              <span class="tile__from"><?= e($item['from']) ?></span>
+            <?php endif; ?>
+          </button>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
 
-    var countEl   = document.querySelector('[data-count]');
-    var actionBtns = document.querySelectorAll('[data-act]');
-    var tiles     = document.querySelectorAll('.tile--selectable');
+    <p class="linkrow" style="margin-top:var(--space-4)">
+      <a href="gallery.php">Gallery</a>
+      <span class="bar">|</span>
+      <a href="?logout=1">Sign Out</a>
+    </p>
 
-    function refresh() {
-      countEl.textContent = selected.size
-        ? selected.size + ' selected'
-        : 'None selected';
-      actionBtns.forEach(function (b) { b.disabled = selected.size === 0; });
-    }
+    <script>
+    (function () {
+      var CSRF = <?= json_encode(csrf_token()) ?>;
+      var selected = new Set();
 
-    tiles.forEach(function (tile) {
-      tile.addEventListener('click', function () {
-        var id = tile.dataset.id;
-        if (selected.has(id)) {
-          selected.delete(id);
-          tile.classList.remove('is-selected');
-          tile.querySelector('.tile__tick').hidden = true;
-        } else {
-          selected.add(id);
-          tile.classList.add('is-selected');
-          tile.querySelector('.tile__tick').hidden = false;
-        }
-        refresh();
-      });
-    });
+      var countEl    = document.querySelector('[data-count]');
+      var actionBtns = document.querySelectorAll('[data-act]');
+      var tiles      = document.querySelectorAll('.tile--selectable');
 
-    document.querySelector('[data-select-all]').addEventListener('click', function () {
-      var selectAll = selected.size !== tiles.length;
-      selected.clear();
+      function refresh() {
+        countEl.textContent = selected.size
+          ? selected.size + ' Selected'
+          : 'None Selected';
+        actionBtns.forEach(function (b) { b.disabled = selected.size === 0; });
+      }
+
       tiles.forEach(function (tile) {
-        tile.classList.toggle('is-selected', selectAll);
-        tile.querySelector('.tile__tick').hidden = !selectAll;
-        if (selectAll) selected.add(tile.dataset.id);
-      });
-      refresh();
-    });
-
-    actionBtns.forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var action = btn.dataset.act;
-        if (action === 'delete' &&
-            !confirm('Permanently delete ' + selected.size + ' file(s) from Google Drive? This cannot be undone.')) {
-          return;
-        }
-
-        actionBtns.forEach(function (b) { b.disabled = true; });
-        countEl.textContent = 'Working…';
-
-        fetch('api/admin-action.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: action,
-            file_ids: Array.from(selected),
-            csrf: CSRF
-          })
-        }).then(function (res) {
-          return res.json();
-        }).then(function (data) {
-          if (data.error) throw new Error(data.error);
-          location.reload();
-        }).catch(function (err) {
-          countEl.textContent = 'Failed: ' + err.message;
-          actionBtns.forEach(function (b) { b.disabled = false; });
+        tile.addEventListener('click', function () {
+          var id = tile.dataset.id;
+          if (selected.has(id)) {
+            selected.delete(id);
+            tile.classList.remove('is-selected');
+            tile.querySelector('.tile__tick').hidden = true;
+          } else {
+            selected.add(id);
+            tile.classList.add('is-selected');
+            tile.querySelector('.tile__tick').hidden = false;
+          }
+          refresh();
         });
       });
-    });
 
-    refresh();
-  })();
-  </script>
+      document.querySelector('[data-select-all]').addEventListener('click', function () {
+        var selectAll = selected.size !== tiles.length;
+        selected.clear();
+        tiles.forEach(function (tile) {
+          tile.classList.toggle('is-selected', selectAll);
+          tile.querySelector('.tile__tick').hidden = !selectAll;
+          if (selectAll) selected.add(tile.dataset.id);
+        });
+        refresh();
+      });
+
+      actionBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var action = btn.dataset.act;
+          if (action === 'delete' &&
+              !confirm('Permanently delete ' + selected.size + ' file(s) from Google Drive? This cannot be undone.')) {
+            return;
+          }
+
+          actionBtns.forEach(function (b) { b.disabled = true; });
+          countEl.textContent = 'Working…';
+
+          fetch('api/admin-action.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: action,
+              file_ids: Array.from(selected),
+              csrf: CSRF
+            })
+          }).then(function (res) {
+            return res.json();
+          }).then(function (data) {
+            if (data.error) throw new Error(data.error);
+            location.reload();
+          }).catch(function (err) {
+            countEl.textContent = 'Failed: ' + err.message;
+            actionBtns.forEach(function (b) { b.disabled = false; });
+          });
+        });
+      });
+
+      refresh();
+    })();
+    </script>
 
 <?php endif; ?>
 
-</main>
-</body>
-</html>
+  </main>
+<?php render_foot(); ?>

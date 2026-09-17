@@ -91,82 +91,75 @@ $consentUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query
     'access_type'   => 'offline',   // required to receive a refresh token
     'prompt'        => 'consent',   // force one, even on repeat authorisation
 ]);
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Setup</title>
-<meta name="robots" content="noindex,nofollow">
-<link rel="stylesheet" href="assets/styles.css">
-<style>
-  code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8125rem; }
-  pre { background: var(--c-bg); border: 1px solid var(--c-line);
-        border-radius: var(--radius); padding: 12px; overflow-x: auto; }
-  ol { padding-left: 20px; }
-  li { margin-bottom: 10px; }
-</style>
-</head>
-<body>
-<main class="wrap">
 
-  <header class="masthead">
-    <h1 class="masthead__names">Setup</h1>
-  </header>
+render_head('Setup — Ali & Robert');
+?>
+<style>
+  code, pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; letter-spacing: 0; }
+  pre { border: 1px solid rgba(247,231,167,.45); border-radius: var(--radius-button);
+        padding: 12px; overflow-x: auto; text-align: left; }
+  ol { padding-left: 20px; text-align: left; }
+  li { margin-bottom: var(--space-2); }
+</style>
+  <main class="wrap">
+
+    <?php render_names(); ?>
+    <?php render_barn(true); ?>
+    <?php render_divider(); ?>
+
+    <h2 class="title">Setup</h2>
 
 <?php if (!admin_is_authed()): ?>
 
-  <form class="card" method="post">
-    <div class="field">
-      <label for="password">Admin password</label>
-      <input type="password" id="password" name="password" autofocus>
-    </div>
-    <button class="btn" type="submit">Continue</button>
-  </form>
+    <form class="card" method="post" style="margin-top:var(--space-3)">
+      <div class="field">
+        <label for="password">Admin Password</label>
+        <input type="password" id="password" name="password" autofocus>
+      </div>
+      <button class="btn btn--spaced" type="submit">Continue</button>
+    </form>
 
 <?php elseif ($result): ?>
 
-  <div class="card">
-    <p><strong>Done.</strong> Put these two values into <code>lib/config.php</code>:</p>
-    <pre>'google_refresh_token' =&gt; '<?= e($result['refresh_token']) ?>',
+    <div class="card" style="margin-top:var(--space-3)">
+      <p class="body"><strong>Done.</strong> Put these two values into <code>lib/config.php</code>:</p>
+      <pre>'google_refresh_token' =&gt; '<?= e($result['refresh_token']) ?>',
 'drive_folder_id'      =&gt; '<?= e($result['folder_id']) ?>',</pre>
-    <p>
-      A folder named <strong>Wedding Guest Uploads</strong> now exists in your
-      Drive. Every upload lands there.
-    </p>
-    <p style="color:var(--c-warn)">
-      <strong>Now delete this file</strong> (<code>public/setup-token.php</code>)
-      from your server.
-    </p>
-  </div>
+      <p class="body" style="margin-top:var(--space-2)">
+        A folder named <strong>Wedding Guest Uploads</strong> now exists in your
+        Drive. Every upload lands there.
+      </p>
+      <p class="body" style="margin-top:var(--space-2);color:var(--gold-confetti)">
+        <strong>Now delete this file</strong> (<code>public/setup-token.php</code>)
+        from your server.
+      </p>
+    </div>
 
 <?php else: ?>
 
   <?php if ($error): ?>
-    <div class="card" style="border-color:var(--c-warn);margin-bottom:16px">
-      <p style="color:var(--c-warn);margin:0"><?= e($error) ?></p>
+    <div class="card" style="margin-top:var(--space-3)">
+      <p class="body" style="color:var(--gold-confetti)"><?= e($error) ?></p>
     </div>
   <?php endif; ?>
 
-  <div class="card">
-    <ol>
-      <li>
-        In the Google Cloud console, open your OAuth client and add this exact
-        redirect URI:
-        <pre><?= e($redirectUri) ?></pre>
-      </li>
-      <li>
-        Make sure the consent screen is <strong>published to Production</strong>.
-        Left in Testing, the refresh token silently stops working after 7 days.
-      </li>
-      <li>Then authorise:</li>
-    </ol>
-    <a class="btn" href="<?= e($consentUrl) ?>">Connect Google Drive</a>
-  </div>
+    <div class="card" style="margin-top:var(--space-3)">
+      <ol class="body">
+        <li>
+          In the Google Cloud console, open your OAuth client and add this exact
+          redirect URI:
+          <pre><?= e($redirectUri) ?></pre>
+        </li>
+        <li>
+          Make sure the consent screen is <strong>published to Production</strong>.
+          Left in Testing, the refresh token silently stops working after 7 days.
+        </li>
+        <li>Then authorise:</li>
+      </ol>
+      <a class="btn btn--spaced" href="<?= e($consentUrl) ?>">Connect Google Drive</a>
+    </div>
 
 <?php endif; ?>
 
-</main>
-</body>
-</html>
+  </main>
+<?php render_foot(); ?>
