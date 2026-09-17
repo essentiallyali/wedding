@@ -9,16 +9,26 @@ require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/drive.php';
 require_once __DIR__ . '/view.php';
 
+function config_path(): string
+{
+    return __DIR__ . '/config.php';
+}
+
+/** True once the install wizard has written a config file. */
+function config_exists(): bool
+{
+    return is_file(config_path());
+}
+
 function config(): array
 {
     static $cfg = null;
     if ($cfg === null) {
-        $path = __DIR__ . '/config.php';
-        if (!is_file($path)) {
-            http_response_code(500);
-            exit('Setup incomplete: copy lib/config.sample.php to lib/config.php and fill it in.');
+        if (!config_exists()) {
+            http_response_code(503);
+            exit('This site has not been set up yet. Open setup-token.php to finish installing it.');
         }
-        $cfg = require $path;
+        $cfg = require config_path();
     }
     return $cfg;
 }

@@ -37,86 +37,96 @@ and quiet.
 
 ## Setup
 
-You need about 20 minutes and a Google account.
+About 20 minutes and a Google account. There is no file editing and no command
+line — an install wizard does the configuring.
 
-### 1. Google Cloud project
+### 1. Google project, and switch on Drive
 
-1. Go to [console.cloud.google.com](https://console.cloud.google.com) → create a
-   project (any name).
-2. **APIs & Services → Library** → search "Google Drive API" → **Enable**.
-3. **APIs & Services → OAuth consent screen**:
-   - User type: **External**
-   - Fill in app name, your email, developer contact.
-   - Scopes: add `.../auth/drive.file` — this is a **non-sensitive** scope, so
-     Google does *not* require a verification review.
-   - ⚠️ **Publish the app** (click *Publish app* → confirm). If you leave it in
-     *Testing*, your refresh token silently expires after **7 days** — which
-     would mean uploads breaking a week after you set it up.
-4. **APIs & Services → Credentials → Create credentials → OAuth client ID**:
-   - Type: **Web application**
-   - Authorised redirect URI: `https://yourdomain.com/setup-token.php`
-     (use the real path where you upload these files)
-   - Save the **Client ID** and **Client secret**.
+1. Go to [console.cloud.google.com](https://console.cloud.google.com), signed in
+   as the account whose Drive should receive the photos.
+2. Top bar → project dropdown → **New Project**. Name it anything. Skip any
+   prompt about billing or a free trial; none of this costs money.
+3. Make sure the new project is the one selected in that dropdown.
+4. Search the top bar for **Google Drive API** → **Enable**.
 
-### 2. Configure
+### 2. Google Auth Platform
 
-```bash
-cp lib/config.sample.php lib/config.php
-```
+Google renamed this in 2025 — what used to be "OAuth consent screen" is now
+**Google Auth Platform**, split into **Branding**, **Audience** and **Clients**.
+Search the top bar for it.
 
-Edit `lib/config.php` and fill in `google_client_id` and `google_client_secret`.
+**Branding** — app name (e.g. *Wedding Photo Uploads*), user support email, and
+developer contact email. Google will not let you publish until these are filled
+in.
 
-Generate your admin password hash and paste it into `admin_password_hash`:
+> Leave the **app logo** empty. Uploading one puts the app into Google's
+> verification queue, which you do not want and do not need.
 
-```bash
-php -r "echo password_hash('pick-a-good-password', PASSWORD_DEFAULT), PHP_EOL;"
-```
+**Audience** — set to **External**, then click **Publish app** so the status
+reads **In production**.
 
-Leave `google_refresh_token` and `drive_folder_id` as-is for now.
+> ⚠️ This is the one step that fails silently if skipped. An app left in
+> *Testing* has its refresh token expired by Google after **7 days**, so uploads
+> would work when you set them up and quietly stop about a week later. If it
+> offers "prepare for verification", ignore that — it is not needed for the
+> `drive.file` scope, which is non-sensitive.
+
+**Clients** → **Create client**:
+
+- Application type: **Web application**
+- **Authorised redirect URIs** → Add: `https://yourdomain.com/setup-token.php`
+- Leave **Authorised JavaScript origins** empty — this site does not use them,
+  and that box rejects anything with a path, which is a common source of the
+  error *"URIs must not contain a path"*.
+
+Keep the **Client ID** and **Client Secret** it gives you.
 
 ### 3. Upload to Bluehost
 
-Put the files on your server so that `public/` is what the web sees:
+Put the files on the server so that `public/` is what the web sees:
 
-| Local path        | On the server                           |
-|-------------------|-----------------------------------------|
-| `public/*`        | `public_html/photos/`  (or a subdomain) |
-| `lib/`, `data/`   | **one level above** `public_html/` if you can |
+| Local path        | On the server                              |
+|-------------------|--------------------------------------------|
+| `public/*`        | the web root of your domain or subdomain   |
+| `lib/`, `data/`   | **one level above** the web root if you can |
 
 Keeping `lib/` and `data/` outside the web root is best, because `lib/config.php`
-holds your Google secret. If your setup makes that awkward, the bundled
-`.htaccess` files in `lib/` and `data/` deny direct web access as a fallback —
-but outside the web root is stronger.
+will hold your Google secret. If that is awkward, the bundled `.htaccess` files
+in both folders deny direct web access as a fallback — but outside the web root
+is stronger.
 
-If you move `lib/` and `data/`, update the `require_once` paths at the top of the
-files in `public/` and `public/api/` to point at the new location.
+If you do move them, update the `require_once` path at the top of each file in
+`public/` and `public/api/`.
 
-Make sure `data/` is writable:
+Both `data/` and `lib/` need to be writable (755 or 775): `data/` for the upload
+records and cached thumbnails, `lib/` so the wizard can write its config. You can
+tighten `lib/` again afterwards.
 
-```bash
-chmod 775 data data/cache
-```
+### 4. Run the wizard
 
-### 4. Connect Drive
+Visit `https://yourdomain.com/setup-token.php`. It asks for:
 
-Visit `https://yourdomain.com/photos/setup-token.php`, enter your admin password,
-and follow the two steps. It will:
+- the **Client ID** and **Client Secret** from step 2,
+- an **admin password** of your choosing — this is what you will type to approve
+  photos. It is not your Google password.
 
-- run the Google consent flow,
-- **create** a Drive folder called *Wedding Guest Uploads*,
-- print your `google_refresh_token` and `drive_folder_id`.
+Then it sends you to Google to approve access. You will see a warning that the
+app is not verified: click **Advanced**, then **Go to … (unsafe)**. That is
+expected — it is your own app, and you are the only person who will ever see
+that screen. Guests never sign in to anything.
 
-Paste both into `lib/config.php`.
+The wizard then creates a Drive folder called **Wedding Guest Uploads** and
+writes `lib/config.php` itself.
 
-> The folder is created through the API on purpose. The `drive.file` scope only
-> reaches files the app itself created, so a folder you made by hand in the Drive
-> UI may not be writable. Letting setup create it avoids that trap.
+> The folder is created through the API deliberately. The `drive.file` scope only
+> reaches files the app itself created, so a folder made by hand in Drive may not
+> be writable.
 
-### 5. Delete the setup file
+### 5. Delete the wizard
 
-```bash
-rm public/setup-token.php
-```
+Delete `public/setup-token.php` from the server. Setup is done and it is not
+needed again. While it exists and no config file is present, anyone who finds the
+URL could point the site at their own Drive.
 
 ### 6. Check your Google storage
 
