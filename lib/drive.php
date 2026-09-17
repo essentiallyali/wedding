@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/compat.php';
 require_once __DIR__ . '/store.php';
 
 const DRIVE_API       = 'https://www.googleapis.com/drive/v3';

@@ -247,4 +247,11 @@ To restyle, edit the `:root` tokens. Nothing else hard-codes a colour.
 
 ## Requirements
 
-PHP 8.0+ with cURL. Both are standard on Bluehost shared hosting.
+PHP 7.4 or newer, with cURL. Both are standard on shared hosting.
+
+The floor is 7.4 deliberately. An earlier version used `never` return types
+(PHP 8.1) and `str_contains`/`str_starts_with` (PHP 8.0). Shared hosting is
+frequently pinned to an older PHP than a laptop runs, and the failure mode is
+the worst kind: every page returns a blank 500 with nothing to read, because
+the file never parses. `lib/compat.php` now fills in those helpers and the
+newer syntax is gone.

@@ -5,6 +5,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/compat.php';
 require_once __DIR__ . '/store.php';
 require_once __DIR__ . '/drive.php';
 require_once __DIR__ . '/view.php';
@@ -33,7 +34,7 @@ function config(): array
     return $cfg;
 }
 
-function json_out(array $payload, int $status = 200): never
+function json_out(array $payload, int $status = 200)
 {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
@@ -41,7 +42,7 @@ function json_out(array $payload, int $status = 200): never
     exit;
 }
 
-function json_error(string $message, int $status = 400): never
+function json_error(string $message, int $status = 400)
 {
     json_out(['error' => $message], $status);
 }
