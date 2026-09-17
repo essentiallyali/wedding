@@ -122,6 +122,36 @@ writes `lib/config.php` itself.
 > reaches files the app itself created, so a folder made by hand in Drive may not
 > be writable.
 
+### If your host blocks the Google callback
+
+Some shared hosts run a firewall (ModSecurity) that rejects Google's sign-in
+reply with **Not Acceptable** or a `Mod_Security` error. The cause is a
+long-standing false positive: the address Google sends back contains
+`scope=https://www.googleapis.com/auth/drive.file` — a web address nested
+inside a web address — which matches the signature of a remote file inclusion
+attack. Bluehost in particular no longer exposes a ModSecurity switch in cPanel,
+so it cannot always be turned off.
+
+The wizard has a second route for this. Fetch the refresh token from Google
+directly, then paste it in:
+
+1. In the Google Cloud console → **Clients** → your OAuth client, add a second
+   authorised redirect URI:
+   `https://developers.google.com/oauthplayground`
+2. Open [the OAuth Playground](https://developers.google.com/oauthplayground).
+3. Click the **gear icon** (top right) → tick **Use your own OAuth
+   credentials** → paste in the Client ID and Client Secret.
+4. In the scope box on the left, paste
+   `https://www.googleapis.com/auth/drive.file` and click **Authorize APIs**.
+   Approve access as the account whose Drive will hold the photos.
+5. On step 2, click **Exchange authorization code for tokens**.
+6. Copy the **Refresh token** — it starts with `1//`.
+7. On the wizard page, use the second form, *If Google Sign-In Is Blocked*.
+
+Everything the site then does runs outbound, from the server to Google, which
+the firewall does not inspect — so this route works where the redirect cannot.
+Afterwards you can remove the playground redirect URI from your OAuth client.
+
 ### 5. Delete the wizard
 
 Delete `public/setup-token.php` from the server. Setup is done and it is not

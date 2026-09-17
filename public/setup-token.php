@@ -52,6 +52,42 @@ if (!$installing && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POS
 }
 
 // ---------------------------------------------------------------------------
+// Install mode, manual route.
+//
+// Some hosts run a firewall that blocks Google's sign-in callback: the address
+// Google sends back carries another web address inside it, which matches an
+// attack signature. Where that cannot be turned off, the refresh token is
+// obtained elsewhere and pasted in here instead.
+// ---------------------------------------------------------------------------
+if ($installing && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['refresh_token'])) {
+    $clientId  = trim((string) ($_POST['m_client_id'] ?? ''));
+    $secret    = trim((string) ($_POST['m_client_secret'] ?? ''));
+    $refresh   = trim((string) $_POST['refresh_token']);
+    $pass      = (string) ($_POST['m_admin_password'] ?? '');
+    $passAgain = (string) ($_POST['m_admin_password2'] ?? '');
+
+    if ($clientId === '' || $secret === '' || $refresh === '') {
+        $error = 'Please fill in the Client ID, the Client Secret and the refresh token.';
+    } elseif (strlen($pass) < 8) {
+        $error = 'Please choose an admin password of at least 8 characters.';
+    } elseif ($pass !== $passAgain) {
+        $error = 'The two passwords did not match.';
+    } else {
+        try {
+            $outcome = install_finalise($clientId, $secret, $refresh, password_hash($pass, PASSWORD_DEFAULT));
+            if ($outcome['ok']) {
+                $result  = $outcome;
+                $written = $outcome['written'];
+            } else {
+                $error = $outcome['error'];
+            }
+        } catch (Throwable $err) {
+            $error = $err->getMessage();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Install mode, step 1: the details form.
 // ---------------------------------------------------------------------------
 if ($installing && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['client_id'])) {
@@ -115,47 +151,88 @@ if (isset($_GET['code']) && ($pending || admin_is_authed())) {
             );
         }
 
-        // 2. Create the destination folder. The app can only reach files it
-        //    created itself, so it must make the folder rather than use one
-        //    you made by hand in Drive.
-        $folderRes = drive_http('POST', DRIVE_API . '/files?fields=id,name', [
-            'headers' => [
-                'Authorization: Bearer ' . $tokens['access_token'],
-                'Content-Type: application/json',
-            ],
-            'body' => json_encode([
-                'name'     => 'Wedding Guest Uploads',
-                'mimeType' => 'application/vnd.google-apps.folder',
-            ]),
-        ]);
+        // 2. Same finishing steps as the manual route.
+        $outcome = install_finalise(
+            $clientId,
+            $secret,
+            $tokens['refresh_token'],
+            $pending['admin_password_hash'] ?? ($cfg['admin_password_hash'] ?? '')
+        );
 
-        $folder = json_decode($folderRes['body'], true) ?: [];
-        if (empty($folder['id'])) {
-            throw new RuntimeException('Could not create the Drive folder: ' . $folderRes['body']);
+        if (!$outcome['ok']) {
+            throw new RuntimeException($outcome['error']);
         }
 
-        $result = [
-            'refresh_token' => $tokens['refresh_token'],
-            'folder_id'     => $folder['id'],
-        ];
+        $result  = $outcome;
+        $written = !empty($outcome['written']);
 
-        // 3. Write the real config file.
-        if ($installing && $pending) {
-            $written = write_config([
-                'google_client_id'     => $pending['google_client_id'],
-                'google_client_secret' => $pending['google_client_secret'],
-                'google_refresh_token' => $result['refresh_token'],
-                'drive_folder_id'      => $result['folder_id'],
-                'admin_password_hash'  => $pending['admin_password_hash'],
-            ]);
-            if ($written) {
-                @unlink($pendingFile);
-                @unlink($pendingFile . '.lock');
-            }
+        if ($installing && $pending && $written) {
+            @unlink($pendingFile);
+            @unlink($pendingFile . '.lock');
         }
     } catch (Throwable $err) {
         $error = $err->getMessage();
     }
+}
+
+/**
+ * Verify a set of credentials against Google, create the Drive folder, and
+ * write the config file. Shared by both install routes.
+ *
+ * Every call here is outbound, from the server to Google. That matters on
+ * hosts whose firewall blocks Google's inbound sign-in callback: outbound
+ * calls are not inspected, so this path works where the redirect cannot.
+ */
+function install_finalise(string $clientId, string $secret, string $refreshToken, string $passHash): array
+{
+    // Trading the refresh token for an access token proves all three values
+    // are right, before anything is written to disk.
+    $res = drive_http('POST', GOOGLE_TOKEN_URL, [
+        'headers' => ['Content-Type: application/x-www-form-urlencoded'],
+        'body'    => http_build_query([
+            'client_id'     => $clientId,
+            'client_secret' => $secret,
+            'refresh_token' => $refreshToken,
+            'grant_type'    => 'refresh_token',
+        ]),
+    ]);
+
+    $tokens = json_decode($res['body'], true) ?: [];
+    if (empty($tokens['access_token'])) {
+        return ['ok' => false, 'error' =>
+            'Google would not accept those three values together. Check the Client ID, '
+            . 'the Client Secret and the refresh token all came from the same project. '
+            . 'Google said: ' . $res['body']];
+    }
+
+    // The drive.file scope only reaches files the app itself created, so the
+    // folder must be made through the API rather than by hand in Drive.
+    $folderRes = drive_http('POST', DRIVE_API . '/files?fields=id,name', [
+        'headers' => [
+            'Authorization: Bearer ' . $tokens['access_token'],
+            'Content-Type: application/json',
+        ],
+        'body' => json_encode([
+            'name'     => 'Wedding Guest Uploads',
+            'mimeType' => 'application/vnd.google-apps.folder',
+        ]),
+    ]);
+
+    $folder = json_decode($folderRes['body'], true) ?: [];
+    if (empty($folder['id'])) {
+        return ['ok' => false, 'error' => 'Could not create the Drive folder: ' . $folderRes['body']];
+    }
+
+    $written = write_config([
+        'google_client_id'     => $clientId,
+        'google_client_secret' => $secret,
+        'google_refresh_token' => $refreshToken,
+        'drive_folder_id'      => $folder['id'],
+        'admin_password_hash'  => $passHash,
+    ]);
+
+    return ['ok' => true, 'written' => $written,
+            'refresh_token' => $refreshToken, 'folder_id' => $folder['id']];
 }
 
 /**
@@ -293,6 +370,51 @@ render_head('Setup — Ali & Robert');
       </div>
 
       <button class="btn btn--spaced" type="submit">Continue to Google</button>
+    </form>
+
+    <?php render_divider(); ?>
+
+    <h2 class="title">If Google Sign-In Is Blocked</h2>
+    <p class="body" style="margin-top:var(--space-2)">
+      Some hosts refuse Google's reply, showing <em>Not Acceptable</em> or
+      <em>Mod_Security</em>. If that happens, fetch the permission slip from
+      Google directly and paste it below. The instructions are in README.md
+      under <strong>If your host blocks the Google callback</strong>.
+    </p>
+
+    <form class="card" method="post" style="margin-top:var(--space-3)">
+      <div class="field">
+        <label for="m_client_id">Google Client ID</label>
+        <input type="text" id="m_client_id" name="m_client_id" required
+               autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="field" style="margin-top:var(--space-2)">
+        <label for="m_client_secret">Google Client Secret</label>
+        <input type="text" id="m_client_secret" name="m_client_secret" required
+               autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="field" style="margin-top:var(--space-2)">
+        <label for="refresh_token">Refresh Token</label>
+        <input type="text" id="refresh_token" name="refresh_token" required
+               autocomplete="off" spellcheck="false" placeholder="starts with 1//">
+      </div>
+
+      <div class="field" style="margin-top:var(--space-3)">
+        <label for="m_admin_password">Choose an Admin Password</label>
+        <input type="password" id="m_admin_password" name="m_admin_password" required
+               autocomplete="new-password" minlength="8">
+        <p class="note">At least 8 characters. Not your Google password.</p>
+      </div>
+
+      <div class="field" style="margin-top:var(--space-2)">
+        <label for="m_admin_password2">Type It Again</label>
+        <input type="password" id="m_admin_password2" name="m_admin_password2" required
+               autocomplete="new-password" minlength="8">
+      </div>
+
+      <button class="btn btn--spaced" type="submit">Finish Setup</button>
     </form>
 
 <?php elseif (!$installing && !admin_is_authed()): ?>
