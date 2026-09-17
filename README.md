@@ -182,6 +182,17 @@ In the approval queue: tap tiles to select, then **Approve**, **Hide**, or
 - **Hide** — stays out of the gallery, file kept in Drive. Reversible.
 - **Delete** — removes it from Drive permanently.
 
+### Forgotten the admin password
+
+`public/set-password.php` sets a new one. It is not part of the running site —
+upload it when needed and delete it afterwards.
+
+It will not do anything until a file called `reset-ok.txt` exists in the `data`
+folder. Creating that file requires File Manager or FTP access, which is proof
+enough that you are the owner; without the guard, the page would hand the
+approval queue to anyone who found the URL. The guard file is consumed on
+success, so it works once per reset.
+
 To close uploads after the event without taking the page down, set
 `'uploads_open' => false` in `lib/config.php`.
 
